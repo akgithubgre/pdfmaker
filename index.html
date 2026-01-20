@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0a0f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>PDF & Image Toolkit</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <script>
+        // Set PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Navigation -->
+        <nav class="nav-bar">
+            <div class="logo">
+                <svg viewBox="0 0 40 40" class="logo-icon">
+                    <defs>
+                        <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#ff6b35"/>
+                            <stop offset="100%" style="stop-color:#f7931e"/>
+                        </linearGradient>
+                    </defs>
+                    <rect x="5" y="5" width="30" height="30" rx="6" fill="url(#logoGrad)"/>
+                    <path d="M12 12h16v3H12zM12 18h16v3H12zM12 24h10v3H12z" fill="#fff"/>
+                </svg>
+                <span>PDF Toolkit</span>
+            </div>
+            <div class="nav-tabs">
+                <button class="nav-tab active" data-tab="pdf-maker">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14,2 14,8 20,8"/>
+                        <line x1="12" y1="18" x2="12" y2="12"/>
+                        <line x1="9" y1="15" x2="15" y2="15"/>
+                    </svg>
+                    PDF Maker
+                </button>
+                <button class="nav-tab" data-tab="pdf-compress">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14,2 14,8 20,8"/>
+                        <path d="M9 15l3-3 3 3"/>
+                        <path d="M12 12v6"/>
+                    </svg>
+                    Compress PDF
+                </button>
+                <button class="nav-tab" data-tab="image-compress">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21,15 16,10 5,21"/>
+                    </svg>
+                    Compress Image
+                </button>
+            </div>
+        </nav>
+
+        <!-- PDF Maker Section -->
+        <section id="pdf-maker" class="tab-content active">
+            <div class="pdf-maker-container">
+                <!-- Step 1: Upload -->
+                <div class="upload-zone" id="pdf-upload-zone">
+                    <div class="upload-content">
+                        <div class="upload-icon">
+                            <svg viewBox="0 0 80 80" fill="none">
+                                <defs>
+                                    <linearGradient id="uploadGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#ff6b35"/>
+                                        <stop offset="100%" style="stop-color:#f7931e"/>
+                                    </linearGradient>
+                                </defs>
+                                <rect x="10" y="20" width="60" height="45" rx="8" stroke="url(#uploadGrad)" stroke-width="3" fill="none"/>
+                                <circle cx="28" cy="35" r="6" stroke="url(#uploadGrad)" stroke-width="2" fill="none"/>
+                                <path d="M10 52l15-12 12 10 18-15 15 12" stroke="url(#uploadGrad)" stroke-width="3" fill="none" stroke-linecap="round"/>
+                                <path d="M40 5v20M30 15l10-10 10 10" stroke="url(#uploadGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <h2>Tap to add images</h2>
+                        <p>Select multiple images</p>
+                        <span class="supported-formats">JPG, PNG, GIF, WEBP</span>
+                    </div>
+                    <input type="file" id="image-input" multiple accept="image/*" hidden>
+                </div>
+
+                <!-- Step 2: Arrange Order -->
+                <div class="order-section" id="order-section" style="display: none;">
+                    <div class="section-header">
+                        <h3>📋 Arrange Order</h3>
+                        <span class="image-count">0 images</span>
+                    </div>
+                    <p class="section-hint">Hold ⋮⋮ and drag to reorder</p>
+                    
+                    <div class="order-list" id="image-list"></div>
+                    
+                    <button class="btn btn-outline add-more-btn" id="add-more-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        Add More Images
+                    </button>
+                </div>
+
+                <!-- Step 3: Actions -->
+                <div class="action-bar" id="pdf-actions" style="display: none;">
+                    <button class="btn btn-secondary" id="clear-all-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3,6 5,6 21,6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                        Clear All
+                    </button>
+                    <button class="btn btn-primary" id="create-pdf-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14,2 14,8 20,8"/>
+                            <path d="M12 18v-6M9 15l3 3 3-3"/>
+                        </svg>
+                        Create PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- Success Modal -->
+            <div class="modal" id="success-modal">
+                <div class="modal-content">
+                    <div class="success-icon">
+                        <svg viewBox="0 0 80 80" fill="none">
+                            <circle cx="40" cy="40" r="35" stroke="#10b981" stroke-width="4" fill="none"/>
+                            <path d="M25 40l10 10 20-20" stroke="#10b981" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h2>PDF Created Successfully!</h2>
+                    <p>Your PDF has been downloaded automatically.</p>
+                    <div class="modal-actions">
+                        <button class="btn btn-secondary" id="compress-pdf-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 15l3-3 3 3"/>
+                                <path d="M12 12v6"/>
+                            </svg>
+                            Compress PDF
+                        </button>
+                        <button class="btn btn-primary" id="create-new-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            Create New
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PDF Compress Section -->
+        <section id="pdf-compress" class="tab-content">
+            <div class="compress-container">
+                <div class="upload-zone" id="pdf-compress-zone">
+                    <div class="upload-content">
+                        <div class="upload-icon">
+                            <svg viewBox="0 0 80 80" fill="none">
+                                <rect x="15" y="8" width="50" height="64" rx="6" stroke="url(#uploadGrad)" stroke-width="3" fill="none"/>
+                                <path d="M25 20h30M25 30h30M25 40h20" stroke="url(#uploadGrad)" stroke-width="2" stroke-linecap="round"/>
+                                <path d="M40 50v15M32 57l8 8 8-8" stroke="url(#uploadGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <h2>Tap to select PDF</h2>
+                        <p>or drop file here</p>
+                        <span class="supported-formats">Supports: PDF files</span>
+                    </div>
+                    <input type="file" id="pdf-compress-input" accept=".pdf" hidden>
+                </div>
+
+                <!-- PDF Compress Options -->
+                <div class="compress-options" id="pdf-compress-options" style="display: none;">
+                    <div class="file-info">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14,2 14,8 20,8"/>
+                        </svg>
+                        <div class="file-details">
+                            <span class="file-name" id="pdf-file-name">document.pdf</span>
+                            <span class="file-size" id="pdf-file-size">Original: 5.2 MB</span>
+                        </div>
+                    </div>
+
+                    <div class="compress-info-box">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="16" x2="12" y2="12"/>
+                            <line x1="12" y1="8" x2="12.01" y2="8"/>
+                        </svg>
+                        <p>Renders at high resolution (216 DPI) for clear text. Text will be non-selectable but visually sharp.</p>
+                    </div>
+
+                    <button class="btn btn-primary btn-large" id="compress-pdf-action">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 15l3-3 3 3"/>
+                            <path d="M12 12v6"/>
+                        </svg>
+                        Compress PDF
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Image Compress Section -->
+        <section id="image-compress" class="tab-content">
+            <div class="compress-container">
+                <div class="upload-zone" id="image-compress-zone">
+                    <div class="upload-content">
+                        <div class="upload-icon">
+                            <svg viewBox="0 0 80 80" fill="none">
+                                <rect x="10" y="15" width="60" height="50" rx="8" stroke="url(#uploadGrad)" stroke-width="3" fill="none"/>
+                                <circle cx="28" cy="32" r="8" stroke="url(#uploadGrad)" stroke-width="2" fill="none"/>
+                                <path d="M10 52l18-15 15 12 20-17 7 6" stroke="url(#uploadGrad)" stroke-width="3" fill="none" stroke-linecap="round"/>
+                                <path d="M55 20v-12M47 16l8-8 8 8" stroke="url(#uploadGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <h2>Tap to select image</h2>
+                        <p>or drop file here</p>
+                        <span class="supported-formats">Supports: JPG, PNG, GIF, WEBP</span>
+                    </div>
+                    <input type="file" id="image-compress-input" accept="image/*" hidden>
+                </div>
+
+                <!-- Image Compress Options -->
+                <div class="compress-options" id="image-compress-options" style="display: none;">
+                    <div class="image-preview-container">
+                        <img id="image-preview" src="" alt="Preview">
+                    </div>
+                    
+                    <div class="file-info">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21,15 16,10 5,21"/>
+                        </svg>
+                        <div class="file-details">
+                            <span class="file-name" id="image-file-name">image.jpg</span>
+                            <span class="file-size" id="image-file-size">Original: 2.1 MB</span>
+                        </div>
+                    </div>
+
+                    <div class="compress-info-box">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="16" x2="12" y2="12"/>
+                            <line x1="12" y1="8" x2="12.01" y2="8"/>
+                        </svg>
+                        <p>Compresses image with optimal quality. Typically reduces size by 50-80% while keeping it sharp.</p>
+                    </div>
+
+                    <button class="btn btn-primary btn-large" id="compress-image-action">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 15l3-3 3 3"/>
+                            <path d="M12 12v6"/>
+                        </svg>
+                        Compress Image
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loading-overlay">
+            <div class="loader">
+                <div class="loader-ring"></div>
+                <span id="loading-text">Processing...</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

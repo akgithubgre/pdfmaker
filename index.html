@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+`<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -259,7 +259,7 @@
                             <line x1="12" y1="16" x2="12" y2="12"/>
                             <line x1="12" y1="8" x2="12.01" y2="8"/>
                         </svg>
-                        <p>Compresses image with optimal quality. Typically reduces size by 50-80% while keeping it sharp.</p>
+                        <p>Compresses image with optimal quality. Choose format when saving.</p>
                     </div>
 
                     <button class="btn btn-primary btn-large" id="compress-image-action">
@@ -278,6 +278,33 @@
             <div class="loader">
                 <div class="loader-ring"></div>
                 <span id="loading-text">Processing...</span>
+            </div>
+        </div>
+
+        <!-- Filename Modal -->
+        <div class="modal" id="filename-modal">
+            <div class="modal-content filename-modal-content">
+                <h2 id="filename-modal-title">Save As</h2>
+                <div class="filename-input-group">
+                    <input type="text" id="filename-input" placeholder="Enter filename" autocomplete="off">
+                    <select id="file-extension-select" style="display: none;">
+                        <option value=".jpg">JPG</option>
+                        <option value=".png">PNG</option>
+                        <option value=".webp">WEBP</option>
+                    </select>
+                    <span class="file-extension" id="file-extension">.pdf</span>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" id="filename-cancel">Cancel</button>
+                    <button class="btn btn-primary" id="filename-save">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        Download
+                    </button>
+                </div>
             </div>
         </div>
     </div>

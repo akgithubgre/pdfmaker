@@ -80,6 +80,69 @@ function hideModal() {
     elements.successModal.classList.remove('active');
 }
 
+// Filename prompt modal
+function promptFilename(defaultName, extension, showFormatDropdown = false) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('filename-modal');
+        const input = document.getElementById('filename-input');
+        const extSpan = document.getElementById('file-extension');
+        const extSelect = document.getElementById('file-extension-select');
+        const saveBtn = document.getElementById('filename-save');
+        const cancelBtn = document.getElementById('filename-cancel');
+        
+        // Set default values
+        input.value = defaultName;
+        
+        // Show dropdown or static extension
+        if (showFormatDropdown) {
+            extSpan.style.display = 'none';
+            extSelect.style.display = 'block';
+            extSelect.value = extension;
+        } else {
+            extSpan.style.display = 'block';
+            extSelect.style.display = 'none';
+            extSpan.textContent = extension;
+        }
+        
+        // Show modal
+        modal.classList.add('active');
+        input.focus();
+        input.select();
+        
+        // Handle save
+        const handleSave = () => {
+            const filename = input.value.trim() || defaultName;
+            const finalExt = showFormatDropdown ? extSelect.value : extension;
+            cleanup();
+            resolve({ filename: filename + finalExt, extension: finalExt });
+        };
+        
+        // Handle cancel
+        const handleCancel = () => {
+            cleanup();
+            resolve(null);
+        };
+        
+        // Handle enter key
+        const handleKeydown = (e) => {
+            if (e.key === 'Enter') handleSave();
+            if (e.key === 'Escape') handleCancel();
+        };
+        
+        // Cleanup listeners
+        const cleanup = () => {
+            modal.classList.remove('active');
+            saveBtn.removeEventListener('click', handleSave);
+            cancelBtn.removeEventListener('click', handleCancel);
+            input.removeEventListener('keydown', handleKeydown);
+        };
+        
+        saveBtn.addEventListener('click', handleSave);
+        cancelBtn.addEventListener('click', handleCancel);
+        input.addEventListener('keydown', handleKeydown);
+    });
+}
+
 // ===== Navigation =====
 function initNavigation() {
     elements.navTabs.forEach(tab => {
@@ -231,13 +294,23 @@ function initSortable() {
         ghostClass: 'sortable-ghost',
         chosenClass: 'sortable-chosen',
         dragClass: 'sortable-drag',
-        delay: 100,
+        delay: 150,
         delayOnTouchOnly: true,
-        touchStartThreshold: 3,
+        touchStartThreshold: 5,
+        preventOnFilter: true,
+        forceFallback: false,
+        scrollSensitivity: 100,
+        scrollSpeed: 20,
+        bubbleScroll: true,
         onStart: () => {
             if (navigator.vibrate) navigator.vibrate(50);
+            // Prevent body scroll while dragging
+            document.body.style.overflow = 'hidden';
         },
         onEnd: (evt) => {
+            // Re-enable body scroll
+            document.body.style.overflow = '';
+            
             const oldIndex = evt.oldIndex;
             const newIndex = evt.newIndex;
             
@@ -349,11 +422,15 @@ async function createPdf() {
         const pdfBlob = pdf.output('blob');
         state.lastCreatedPdf = pdfBlob;
         
-        // Auto download
-        const fileName = `images_to_pdf_${Date.now()}.pdf`;
-        pdf.save(fileName);
-        
         hideLoading();
+        
+        // Prompt for filename
+        const result = await promptFilename('my_document', '.pdf');
+        if (!result) return; // User cancelled
+        
+        // Download with chosen name
+        pdf.save(result.filename);
+        
         showModal();
         
     } catch (error) {
@@ -521,13 +598,19 @@ async function compressPdf() {
         
         const compressedBlob = pdf.output('blob');
         
+        hideLoading();
+        
+        // Prompt for filename
+        const originalName = state.pdfFile.name || 'document';
+        const baseName = originalName.replace('.pdf', '').replace(/[^a-zA-Z0-9_-]/g, '_');
+        const result = await promptFilename(`${baseName}_compressed`, '.pdf');
+        if (!result) return; // User cancelled
+        
         // Download the compressed PDF
         const url = URL.createObjectURL(compressedBlob);
         const a = document.createElement('a');
         a.href = url;
-        const originalName = state.pdfFile.name || 'document';
-        const baseName = originalName.replace('.pdf', '');
-        a.download = `${baseName}_compressed.pdf`;
+        a.download = result.filename;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -536,8 +619,6 @@ async function compressPdf() {
         // Show results
         const newSize = compressedBlob.size;
         const savings = ((1 - (newSize / originalSize)) * 100).toFixed(1);
-        
-        hideLoading();
         
         let message = `PDF Compressed! ✨\n\n`;
         message += `📄 Original: ${formatFileSize(originalSize)}\n`;
@@ -626,15 +707,33 @@ async function compressImage() {
             img.src = originalDataUrl;
         });
         
-        // Use 85% quality - optimal balance of size and quality
-        const compressedBlob = await compressImageToBlob(img, 0.85);
+        hideLoading();
+        
+        // Prompt for filename with format dropdown
+        const baseName = state.imageFile.name.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+        const result = await promptFilename(`${baseName}_compressed`, '.jpg', true);
+        if (!result) return; // User cancelled
+        
+        // Get format based on selected extension
+        const formatMap = {
+            '.jpg': { mime: 'image/jpeg', quality: 0.85 },
+            '.png': { mime: 'image/png', quality: 1 },
+            '.webp': { mime: 'image/webp', quality: 0.85 }
+        };
+        const format = formatMap[result.extension];
+        
+        showLoading('Compressing...');
+        
+        // Compress with selected format
+        const compressedBlob = await compressImageToBlob(img, format.quality, format.mime);
+        
+        hideLoading();
         
         // Download
         const url = URL.createObjectURL(compressedBlob);
         const a = document.createElement('a');
         a.href = url;
-        const baseName = state.imageFile.name.replace(/\.[^/.]+$/, '');
-        a.download = `${baseName}_compressed.jpg`;
+        a.download = result.filename;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -644,8 +743,6 @@ async function compressImage() {
         const originalSize = state.imageFile.size;
         const newSize = compressedBlob.size;
         const savings = ((1 - (newSize / originalSize)) * 100).toFixed(1);
-        
-        hideLoading();
         
         let message = `Image Compressed! ✨\n\n`;
         message += `📷 Original: ${formatFileSize(originalSize)}\n`;
@@ -661,7 +758,7 @@ async function compressImage() {
     }
 }
 
-function compressImageToBlob(img, quality) {
+function compressImageToBlob(img, quality, mimeType = 'image/jpeg') {
     return new Promise((resolve) => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -685,11 +782,16 @@ function compressImageToBlob(img, quality) {
         canvas.width = width;
         canvas.height = height;
         
+        // For PNG, fill with transparent background
+        if (mimeType === 'image/png') {
+            ctx.clearRect(0, 0, width, height);
+        }
+        
         ctx.drawImage(img, 0, 0, width, height);
         
         canvas.toBlob((blob) => {
             resolve(blob);
-        }, 'image/jpeg', quality);
+        }, mimeType, quality);
     });
 }
 
